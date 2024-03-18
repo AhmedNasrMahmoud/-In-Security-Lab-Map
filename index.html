@@ -18,6 +18,7 @@
             top: 0;
             bottom: 0;
             width: 100%;
+            height: 100%;
         }
 
         .marker {
@@ -37,15 +38,45 @@
             text-align: center;
             font-family: 'Open Sans', sans-serif;
         }
+
+        #narrative {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 300px;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #story-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        #story-controls button {
+            flex-grow: 1;
+            margin: 0 5px;
+        }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
+    <div id="narrative">
+        <h1>Story Title</h1>
+        <p>This is the introductory text of your story.</p>
+        <div id="story-controls">
+            <button id="prev">Previous</button>
+            <button id="next">Next</button>
+        </div>
+    </div>
     <script src="./config.js"></script>
-
     <script>
         mapboxgl.accessToken = config.accessToken;
+        
         const map = new mapboxgl.Map({
             container: 'map',
             style: config.style,
@@ -53,12 +84,62 @@
             minZoom: 2,
             zoom: 5
         });
+
+        let currentStoryIndex = 0; // Initialize the story index
+        const storyPoints = [
+            {
+                center: [10.48058195797077, 49.24314243453216],
+                zoom: 5,
+                narrative: `<h2>Crime Data Overview</h2><p>Explore crime data across regions.</p>`
+            },
+            {
+                center: [10.48058195797077, 49.24314243453216],
+                zoom: 5,
+                narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>`
+            },
+            {
+                center: [10.48058195797077, 49.24314243453216],
+                zoom: 5,
+                narrative: `<h2>Points of Interest Data Overview</h2><p>Explore Points of Interest data across regions.</p>`
+            },
+        ];
+
+        function showStoryPoint(index) {
+            const point = storyPoints[index];
+            if (!point) return; // Exit if the index is out of bounds
+
+            map.flyTo({
+                center: point.center,
+                zoom: point.zoom
+            });
+
+            document.getElementById('narrative').innerHTML = point.narrative + `
+                <div id="story-controls">
+                    <button onclick="navigateStory(-1)">Previous</button>
+                    <button onclick="navigateStory(1)">Next</button>
+                </div>
+            `;
+        }
+
+        function navigateStory(direction) {
+            const newIndex = currentStoryIndex + direction;
+            if (newIndex >= 0 && newIndex < storyPoints.length) {
+                currentStoryIndex = newIndex;
+                showStoryPoint(currentStoryIndex);
+            }
+        }
+
+        document.getElementById('next').addEventListener('click', () => navigateStory(1));
+        document.getElementById('prev').addEventListener('click', () => navigateStory(-1));
+
         map.on('load', () => {
+            showStoryPoint(currentStoryIndex); // Show the initial story point
 
             map.addSource('crimes', {
                 'url': config.CrimesURL,
                 'type': 'vector',
             });
+
             map.addLayer({
                 'id': 'circles',
                 'type': 'circle',
@@ -70,25 +151,30 @@
                     'circle-radius': 5
                 }
             });
-            for (const feature of geojson.features) {
-                // create a HTML element for each feature
-                const el = document.createElement('div');
-                el.className = 'marker';
 
-                // make a marker for each feature and add it to the map
-                new mapboxgl.Marker(el)
-                    .setLngLat(feature.geometry.coordinates)
-                    .setPopup(
-                        new mapboxgl.Popup({ offset: 25 }) // add popups
-                            .setHTML(
-                                `<h3>${feature.properties.title}</h3><p>${feature.properties.description}</p>`
-                            )
-                    )
+            map.on('click', 'circles', (e) => {
+                const dataID = e.features[0].properties.ID;
+                let popupContent = `<h3>ID: ${dataID}</h3>`;
+                for (const [key, value] of Object.entries(e.features[0].properties)) {
+                    if (key !== 'ID') {
+                        popupContent += `<div><strong>${key}</strong>: ${value}</div>`;
+                    }
+                }
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
                     .addTo(map);
-            }
+            });
+
+            map.on('mouseenter', 'circles', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'circles', () => {
+                map.getCanvas().style.cursor = '';
+            });
         });
     </script>
-
 </body>
 
 </html>
