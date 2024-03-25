@@ -76,7 +76,7 @@
     <script src="./config.js"></script>
     <script>
         mapboxgl.accessToken = config.accessToken;
-        
+
         const map = new mapboxgl.Map({
             container: 'map',
             style: config.style,
@@ -95,12 +95,14 @@
             {
                 center: [10.48058195797077, 49.24314243453216],
                 zoom: 5,
-                narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>`
+                narrative: `<h2>Points of Interest Data Overview</h2><p>Explore Points of Interest data across regions.</p>`,
+                showNewTileset: true
             },
             {
                 center: [10.48058195797077, 49.24314243453216],
                 zoom: 5,
-                narrative: `<h2>Points of Interest Data Overview</h2><p>Explore Points of Interest data across regions.</p>`
+                narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>`,
+                showNewTileset: true
             },
         ];
 
@@ -113,12 +115,131 @@
                 zoom: point.zoom
             });
 
-            document.getElementById('narrative').innerHTML = point.narrative + `
-                <div id="story-controls">
-                    <button onclick="navigateStory(-1)">Previous</button>
-                    <button onclick="navigateStory(1)">Next</button>
-                </div>
-            `;
+            document.getElementById('narrative').innerHTML = point.narrative +
+                `
+                    <div id="story-controls">
+                        <button onclick="navigateStory(-1)">Previous</button>
+                        <button onclick="navigateStory(1)">Next</button>
+                    </div>
+                `;
+
+            // Handle layer visibility
+            if (index === 0) { // For the first story point
+                if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
+                if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
+                map.setLayoutProperty('crimes', 'visibility', 'visible');
+            }
+            else if (index === 1) { // For the second story point
+                if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
+                if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
+                map.setLayoutProperty('pointsOfInterest', 'visibility', 'visible');
+            }
+            else if (index === 2) { // For the third story point
+                if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
+                if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
+                map.setLayoutProperty('trials', 'visibility', 'visible');
+            }
+
+            map.on('click', 'crimes', (e) => {
+                const dataID = e.features[0].properties.ID;
+                let popupContent = `<h3>ID: ${dataID}</h3>`;
+                for (const [key, value] of Object.entries(e.features[0].properties)) {
+                    if (key !== 'ID' && key !== 'GeoLocation of Trial' && key !== 'GeoLocation of Crime' && key !== 'Territory' && value !== '.' && value !== '') {
+                        let displayValue = value; // Use a separate variable for the display value
+
+                        // Convert values for "Gender/Sex"
+                        if (key == "Gender/Sex") {
+                            if (value == '0') {
+                                displayValue = 'Male';
+                            } else if (value == '1') {
+                                displayValue = 'Female';
+                            }
+                        }
+                        // Convert all other '0' and '1' values to 'No' and 'Yes besides Sentence Length'
+                        else {
+                            if (value == '0' && key !== 'Sentence Length') {
+                                displayValue = 'No';
+                            } else if (value == '1' && key !== 'Sentence Length') {
+                                displayValue = 'Yes';
+                            }
+                        }
+                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                    }
+                }
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
+            });
+
+            map.on('click', 'pointsOfInterest', (e) => {
+                const Name = e.features[0].properties['Name of Location'];
+                let popupContent = `<h3>Name of Location: ${Name}</h3>`;
+                for (const [key, value] of Object.entries(e.features[0].properties)) {
+                    if (value !== '.' && value !== '' && key !== 'Name of Location') {
+                        popupContent += `<div><strong>${key}</strong>: ${value}</div>`;
+                    }
+                }
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
+            });
+
+            map.on('click', 'trials', (e) => {
+                const dataID = e.features[0].properties.ID;
+                let popupContent = `<h3>ID: ${dataID}</h3>`;
+                for (const [key, value] of Object.entries(e.features[0].properties)) {
+                    if (key !== 'ID' && key !== 'GeoLocation of Trial' && key !== 'GeoLocation of Crime' && key !== 'Territory' && value !== '.' && value !== '') {
+                        let displayValue = value; // Use a separate variable for the display value
+
+                        // Convert values for "Gender/Sex"
+                        if (key == "Gender/Sex") {
+                            if (value == '0') {
+                                displayValue = 'Male';
+                            } else if (value == '1') {
+                                displayValue = 'Female';
+                            }
+                        }
+                        // Convert all other '0' and '1' values to 'No' and 'Yes besides Sentence Length'
+                        else {
+                            if (value == '0' && key !== 'Sentence Length') {
+                                displayValue = 'No';
+                            } else if (value == '1' && key !== 'Sentence Length') {
+                                displayValue = 'Yes';
+                            }
+                        }
+                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                    }
+                }
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
+            });
+
+            map.on('mouseenter', 'crimes', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'crimes', () => {
+                map.getCanvas().style.cursor = '';
+            });
+            map.on('mouseenter', 'pointsOfInterest', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'pointsOfInterest', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            map.on('mouseenter', 'trials', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'trials', () => {
+                map.getCanvas().style.cursor = '';
+            });
         }
 
         function navigateStory(direction) {
@@ -133,7 +254,6 @@
         document.getElementById('prev').addEventListener('click', () => navigateStory(-1));
 
         map.on('load', () => {
-            showStoryPoint(currentStoryIndex); // Show the initial story point
 
             map.addSource('crimes', {
                 'url': config.CrimesURL,
@@ -141,10 +261,10 @@
             });
 
             map.addLayer({
-                'id': 'circles',
+                'id': 'crimes',
                 'type': 'circle',
                 'source': 'crimes',
-                'source-layer': 'Crimes_Geolocations-af0gkk',
+                'source-layer': config.CrimesSource,
                 'paint': {
                     'circle-color': '#7F3121',
                     'circle-opacity': 0.75,
@@ -152,27 +272,44 @@
                 }
             });
 
-            map.on('click', 'circles', (e) => {
-                const dataID = e.features[0].properties.ID;
-                let popupContent = `<h3>ID: ${dataID}</h3>`;
-                for (const [key, value] of Object.entries(e.features[0].properties)) {
-                    if (key !== 'ID') {
-                        popupContent += `<div><strong>${key}</strong>: ${value}</div>`;
-                    }
+            showStoryPoint(currentStoryIndex); // Show the initial story point
+
+            map.addSource('pointsOfInterest', {
+                'url': config.InterestURL, // Ensure this URL is correctly set in your config.js
+                'type': 'vector'
+            });
+            map.addLayer({
+                'id': 'pointsOfInterest',
+                'type': 'circle',
+                'source': 'pointsOfInterest', // Make sure this matches the newly added source ID
+                'source-layer': config.InterestSource, // This should match your actual source layer ID in the tileset
+                'paint': {
+                    'circle-color': '#0000FF',
+                    'circle-opacity': 0.75,
+                    'circle-radius': 5
                 }
-                new mapboxgl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(popupContent)
-                    .addTo(map);
             });
 
-            map.on('mouseenter', 'circles', () => {
-                map.getCanvas().style.cursor = 'pointer';
+            showStoryPoint(currentStoryIndex);
+
+            map.addSource('trials', {
+                'url': config.TrialsURL, // Ensure this URL is correctly set in your config.js
+                'type': 'vector'
+            });
+            map.addLayer({
+                'id': 'trials',
+                'type': 'circle',
+                'source': 'trials', // Make sure this matches the newly added source ID
+                'source-layer': config.TrialsSource, // This should match your actual source layer ID in the tileset
+                'paint': {
+                    'circle-color': '#006400',
+                    'circle-opacity': 0.75,
+                    'circle-radius': 5
+                }
             });
 
-            map.on('mouseleave', 'circles', () => {
-                map.getCanvas().style.cursor = '';
-            });
+            showStoryPoint(currentStoryIndex);
+
         });
     </script>
 </body>
