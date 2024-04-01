@@ -88,19 +88,19 @@
         let currentStoryIndex = 0; // Initialize the story index
         const storyPoints = [
             {
-                center: [10.48058195797077, 49.24314243453216],
-                zoom: 5,
+                center: [14.037918743922944, 51.2],
+                zoom: 5.5,
                 narrative: `<h2>Crime Data Overview</h2><p>Explore crime data across regions.</p>`
             },
             {
-                center: [10.48058195797077, 49.24314243453216],
-                zoom: 5,
+                center: [14.037918743922944, 51.2],
+                zoom: 5.8,
                 narrative: `<h2>Points of Interest Data Overview</h2><p>Explore Points of Interest data across regions.</p>`,
                 showNewTileset: true
             },
             {
-                center: [10.48058195797077, 49.24314243453216],
-                zoom: 5,
+                center: [10.5, 51.5],
+                zoom: 5.6,
                 narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>`,
                 showNewTileset: true
             },
@@ -127,50 +127,57 @@
             if (index === 0) { // For the first story point
                 if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
                 if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
+                if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
                 map.setLayoutProperty('crimes', 'visibility', 'visible');
             }
             else if (index === 1) { // For the second story point
                 if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
                 if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
                 map.setLayoutProperty('pointsOfInterest', 'visibility', 'visible');
+                map.setLayoutProperty('poi-labels', 'visibility', 'visible');
             }
             else if (index === 2) { // For the third story point
                 if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
                 if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
+                if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
                 map.setLayoutProperty('trials', 'visibility', 'visible');
             }
 
             map.on('click', 'crimes', (e) => {
-                const dataID = e.features[0].properties.ID;
-                let popupContent = `<h3>ID: ${dataID}</h3>`;
-                for (const [key, value] of Object.entries(e.features[0].properties)) {
-                    if (key !== 'ID' && key !== 'GeoLocation of Trial' && key !== 'GeoLocation of Crime' && key !== 'Territory' && value !== '.' && value !== '') {
-                        let displayValue = value; // Use a separate variable for the display value
+                const defendantName = e.features[0].properties['Defendant Name'];
+                let popupContent = `<h3>Defendant Name: ${defendantName}</h3>`;
+                const preferredOrder = ['Gender/Sex', 'Crime', '﻿ID'];
 
-                        // Convert values for "Gender/Sex"
-                        if (key == "Gender/Sex") {
-                            if (value == '0') {
-                                displayValue = 'Male';
-                            } else if (value == '1') {
-                                displayValue = 'Female';
-                            }
-                        }
-                        // Convert all other '0' and '1' values to 'No' and 'Yes besides Sentence Length'
-                        else {
-                            if (value == '0' && key !== 'Sentence Length') {
-                                displayValue = 'No';
-                            } else if (value == '1' && key !== 'Sentence Length') {
-                                displayValue = 'Yes';
-                            }
-                        }
-                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                // Exclude 'Defendant Name' in addition to other keys you don't want
+                const keys = Object.keys(e.features[0].properties)
+                    .filter(key => !['GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Defendant Name']
+                        .includes(key) && e.features[0].properties[key] !== '.' && e.features[0].properties[key] !== '');
+
+                // Sort the keys by preferred order first, then the rest as they come
+                const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
+
+                for (const key of sortedKeys) {
+                    let displayValue = e.features[0].properties[key];
+                    // Convert values for "Gender/Sex"
+                    if (key == "Gender/Sex") {
+                        displayValue = displayValue == '0' ? 'Male' : 'Female';
                     }
+                    // Convert all other '0' and '1' values to 'No' and 'Yes' besides 'Sentence Length'
+                    else if (displayValue == '0' && key !== 'Sentence Length') {
+                        displayValue = 'No';
+                    } else if (displayValue == '1' && key !== 'Sentence Length') {
+                        displayValue = 'Yes';
+                    }
+
+                    popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
                 }
                 new mapboxgl.Popup()
                     .setLngLat(e.lngLat)
                     .setHTML(popupContent)
                     .addTo(map);
             });
+
+
 
             map.on('click', 'pointsOfInterest', (e) => {
                 const Name = e.features[0].properties['Name of Location'];
@@ -187,30 +194,32 @@
             });
 
             map.on('click', 'trials', (e) => {
-                const dataID = e.features[0].properties.ID;
-                let popupContent = `<h3>ID: ${dataID}</h3>`;
-                for (const [key, value] of Object.entries(e.features[0].properties)) {
-                    if (key !== 'ID' && key !== 'GeoLocation of Trial' && key !== 'GeoLocation of Crime' && key !== 'Territory' && value !== '.' && value !== '') {
-                        let displayValue = value; // Use a separate variable for the display value
+                const trialNo = e.features[0].properties['Trial No.'];
+                let popupContent = `<h3>Trial Number: ${trialNo}</h3>`;
+                const preferredOrder = ['Defendant Name', 'Gender/Sex', 'Crime', '﻿ID'];
 
-                        // Convert values for "Gender/Sex"
-                        if (key == "Gender/Sex") {
-                            if (value == '0') {
-                                displayValue = 'Male';
-                            } else if (value == '1') {
-                                displayValue = 'Female';
-                            }
-                        }
-                        // Convert all other '0' and '1' values to 'No' and 'Yes besides Sentence Length'
-                        else {
-                            if (value == '0' && key !== 'Sentence Length') {
-                                displayValue = 'No';
-                            } else if (value == '1' && key !== 'Sentence Length') {
-                                displayValue = 'Yes';
-                            }
-                        }
-                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                // Create an array of keys from the properties, excluding unwanted keys
+                const keys = Object.keys(e.features[0].properties)
+                    .filter(key => !['Trial No.', 'GeoLocation of Trial', 'GeoLocation of Crime', 'Territory']
+                        .includes(key) && e.features[0].properties[key] !== '.' && e.features[0].properties[key] !== '');
+
+                // Sort the keys by preferred order first, then the rest as they come
+                const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
+
+                for (const key of sortedKeys) {
+                    let displayValue = e.features[0].properties[key];
+                    // Convert values for "Gender/Sex"
+                    if (key == "Gender/Sex") {
+                        displayValue = displayValue == '0' ? 'Male' : 'Female';
                     }
+                    // Convert all other '0' and '1' values to 'No' and 'Yes', besides 'Sentence Length'
+                    else if (displayValue == '0' && key !== 'Sentence Length') {
+                        displayValue = 'No';
+                    } else if (displayValue == '1' && key !== 'Sentence Length') {
+                        displayValue = 'Yes';
+                    }
+
+                    popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
                 }
                 new mapboxgl.Popup()
                     .setLngLat(e.lngLat)
@@ -218,30 +227,14 @@
                     .addTo(map);
             });
 
-            map.on('mouseenter', 'crimes', () => {
-                map.getCanvas().style.cursor = 'pointer';
+            const layers = ['crimes', 'pointsOfInterest', 'trials'];
+
+            layers.forEach(layer => {
+                map.on('mouseenter', layer, () => map.getCanvas().style.cursor = 'pointer');
+                map.on('mouseleave', layer, () => map.getCanvas().style.cursor = '');
             });
 
-            map.on('mouseleave', 'crimes', () => {
-                map.getCanvas().style.cursor = '';
-            });
-            map.on('mouseenter', 'pointsOfInterest', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-
-            map.on('mouseleave', 'pointsOfInterest', () => {
-                map.getCanvas().style.cursor = '';
-            });
-
-            map.on('mouseenter', 'trials', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-
-            map.on('mouseleave', 'trials', () => {
-                map.getCanvas().style.cursor = '';
-            });
         }
-
         function navigateStory(direction) {
             const newIndex = currentStoryIndex + direction;
             if (newIndex >= 0 && newIndex < storyPoints.length) {
@@ -269,7 +262,7 @@
                     'circle-color': '#7F3121',
                     'circle-opacity': 0.75,
                     'circle-radius': 5
-                }
+                },
             });
 
             showStoryPoint(currentStoryIndex); // Show the initial story point
@@ -287,6 +280,23 @@
                     'circle-color': '#0000FF',
                     'circle-opacity': 0.75,
                     'circle-radius': 5
+                }
+
+            });
+
+            map.addLayer({
+                'id': 'poi-labels',
+                'type': 'symbol', // This specifies that the layer is for symbols (text or icons)
+                'source': 'pointsOfInterest',
+                'source-layer': config.InterestSource,
+                'layout': {
+                    'text-field': ['get', 'Category'],
+                    'text-size': 12,
+                    'text-anchor': 'top', // This positions the text above the point
+                    'text-offset': [0, 0.2] // Adjusts the offset of the text vertically to avoid overlapping with the icon
+                },
+                'paint': {
+                    'text-color': '#0000FF' // Set the text color
                 }
             });
 
