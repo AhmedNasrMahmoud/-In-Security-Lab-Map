@@ -7,63 +7,14 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css' rel='stylesheet' />
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .marker {
-            background-image: url('mapbox-icon.png');
-            background-size: cover;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        .mapboxgl-popup {
-            max-width: 200px;
-        }
-
-        .mapboxgl-popup-content {
-            text-align: center;
-            font-family: 'Open Sans', sans-serif;
-        }
-
-        #narrative {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            max-width: 300px;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        #story-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-        }
-
-        #story-controls button {
-            flex-grow: 1;
-            margin: 0 5px;
-        }
-    </style>
+    <link href="style.css" rel="stylesheet" />
 </head>
 
 <body>
+    <div id="side-panel"
+        style="position: absolute; top: 10px; right: 10px; z-index: 1; background: white; padding: 10px; display: none;">
+        <div id="point-list"></div>
+    </div>
     <div id="map"></div>
     <div id="narrative">
         <h1>Story Title</h1>
@@ -143,39 +94,72 @@
                 map.setLayoutProperty('trials', 'visibility', 'visible');
             }
 
+            // Assuming the side panel HTML is already in place as described previously
             map.on('click', 'crimes', (e) => {
-                const defendantName = e.features[0].properties['Defendant Name'];
-                let popupContent = `<h3>Defendant Name: ${defendantName}</h3>`;
-                const preferredOrder = ['Gender/Sex', 'Crime', '﻿ID'];
+                document.getElementById('point-list').innerHTML = '';
 
-                // Exclude 'Defendant Name' in addition to other keys you don't want
-                const keys = Object.keys(e.features[0].properties)
-                    .filter(key => !['GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Defendant Name']
-                        .includes(key) && e.features[0].properties[key] !== '.' && e.features[0].properties[key] !== '');
+                var bbox = [[e.point.x - 5, e.point.y - 1], [e.point.x + 5, e.point.y + 1]]; // Adjust radius as needed
+                var features = map.queryRenderedFeatures(bbox, { layers: ['crimes'] });
 
-                // Sort the keys by preferred order first, then the rest as they come
-                const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
-
-                for (const key of sortedKeys) {
-                    let displayValue = e.features[0].properties[key];
-                    // Convert values for "Gender/Sex"
-                    if (key == "Gender/Sex") {
-                        displayValue = displayValue == '0' ? 'Male' : 'Female';
+                if (features.length) {
+                    document.getElementById('side-panel').style.display = 'block';
+                    var listHTML = '';
+                    features.forEach(function (feature, index) {
+                        // Assuming 'Defendant Name' can serve as a title for each item
+                        const defendantName = feature.properties['Defendant Name'];
+                        listHTML += `<div class="list-item" data-index="${index}">${defendantName}</div>`;
+                    });
+                    document.getElementById('point-list').innerHTML = listHTML;
+                    if (window.currentPopup) {
+                        window.currentPopup.remove(); // Close the current popup if it exists
                     }
-                    // Convert all other '0' and '1' values to 'No' and 'Yes' besides 'Sentence Length'
-                    else if (displayValue == '0' && key !== 'Sentence Length') {
-                        displayValue = 'No';
-                    } else if (displayValue == '1' && key !== 'Sentence Length') {
-                        displayValue = 'Yes';
-                    }
+                    // Add click listeners to each list item
+                    document.querySelectorAll('.list-item').forEach(function (item) {
+                        item.addEventListener('click', function () {
+                            // Close the current popup if it exists before opening a new one
+                            if (window.currentPopup) {
+                                window.currentPopup.remove();
+                            }
 
-                    popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                            var index = this.getAttribute('data-index');
+                            var feature = features[index];
+
+                            // Building the popup content based on the feature's properties
+                            let popupContent = `<h3>Defendant Name: ${feature.properties['Defendant Name']}</h3>`;
+                            const preferredOrder = ['Gender/Sex', 'Crime', '﻿ID'];
+
+                            const keys = Object.keys(feature.properties)
+                                .filter(key => !['GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Defendant Name']
+                                    .includes(key) && feature.properties[key] !== '.' && feature.properties[key] !== '');
+
+                            const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
+
+                            for (const key of sortedKeys) {
+                                let displayValue = feature.properties[key];
+                                if (key === "Gender/Sex") {
+                                    displayValue = displayValue === '0' ? 'Male' : 'Female';
+                                } else if (displayValue === '0' && key !== 'Sentence Length') {
+                                    displayValue = 'No';
+                                } else if (displayValue === '1' && key !== 'Sentence Length') {
+                                    displayValue = 'Yes';
+                                }
+
+                                popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                            }
+
+                            // Display the detailed popup for the clicked item
+                            window.currentPopup = new mapboxgl.Popup()
+                                .setLngLat(feature.geometry.coordinates)
+                                .setHTML(popupContent)
+                                .addTo(map);
+                        });
+                    });
+                } else {
+                    // Hide the side panel if no features are found
+                    document.getElementById('side-panel').style.display = 'none';
                 }
-                new mapboxgl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(popupContent)
-                    .addTo(map);
             });
+
 
 
 
@@ -235,6 +219,7 @@
             });
 
         }
+
         function navigateStory(direction) {
             const newIndex = currentStoryIndex + direction;
             if (newIndex >= 0 && newIndex < storyPoints.length) {
@@ -245,6 +230,13 @@
 
         document.getElementById('next').addEventListener('click', () => navigateStory(1));
         document.getElementById('prev').addEventListener('click', () => navigateStory(-1));
+        document.addEventListener('click', function (event) {
+            if (event.target.classList.contains('list-item-title')) {
+                const detailsElement = event.target.nextElementSibling;
+                detailsElement.classList.toggle('open'); // Toggle visibility of details
+            }
+        });
+
 
         map.on('load', () => {
 
@@ -259,7 +251,13 @@
                 'source': 'crimes',
                 'source-layer': config.CrimesSource,
                 'paint': {
-                    'circle-color': '#7F3121',
+                    'circle-color': [
+                        'match',
+                        ['get', 'Gender/Sex'], // Get the 'Gender/Sex' property of the feature
+                        0, '#7F3121', // Color for Male (assuming '0' is Male)
+                        1, '#FF69B4', // Color for Female (assuming '1' is Female)
+                        '#CCCCCC' // Default color if neither
+                    ],
                     'circle-opacity': 0.75,
                     'circle-radius': 5
                 },
@@ -277,7 +275,15 @@
                 'source': 'pointsOfInterest', // Make sure this matches the newly added source ID
                 'source-layer': config.InterestSource, // This should match your actual source layer ID in the tileset
                 'paint': {
-                    'circle-color': '#0000FF',
+                    'circle-color': [
+                        'match',
+                        ['get', 'Category'], // Get the 'Category' property of the feature
+                        'Labor Camp', '#7F3121',
+                        'Hospital', '#FF69B4',
+                        'Medical Institution', '#0000FF',
+                        'Concentration Camp', '#FF0000',
+                        '#CCCCCC' // Default color if neither
+                    ],
                     'circle-opacity': 0.75,
                     'circle-radius': 5
                 }
@@ -286,19 +292,30 @@
 
             map.addLayer({
                 'id': 'poi-labels',
-                'type': 'symbol', // This specifies that the layer is for symbols (text or icons)
+                'type': 'symbol',
                 'source': 'pointsOfInterest',
                 'source-layer': config.InterestSource,
                 'layout': {
-                    'text-field': ['get', 'Category'],
+                    'text-field': ['get', 'Name of Location'],
                     'text-size': 12,
-                    'text-anchor': 'top', // This positions the text above the point
-                    'text-offset': [0, 0.2] // Adjusts the offset of the text vertically to avoid overlapping with the icon
+                    'text-anchor': 'top',
+                    'text-offset': [0, 0.2],
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold']
                 },
                 'paint': {
-                    'text-color': '#0000FF' // Set the text color
+                    // Use the same 'match' expression for 'text-color' as used for 'circle-color' in 'pointsOfInterest'
+                    'text-color': [
+                        'match',
+                        ['get', 'Category'],
+                        'Labor Camp', '#7F3121',
+                        'Hospital', '#FF69B4',
+                        'Medical Institution', '#0000FF',
+                        'Concentration Camp', '#FF0000',
+                        '#CCCCCC' // Default color if the category doesn't match any of the specified
+                    ]
                 }
             });
+
 
             showStoryPoint(currentStoryIndex);
 
