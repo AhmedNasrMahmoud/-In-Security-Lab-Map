@@ -11,12 +11,20 @@
 </head>
 
 <body>
+    <div id="map"></div>
+    <div id="intro-panel"
+        style="position: absolute; top: 50px; left: 50%; transform: translateX(-50%); z-index: 10; background: white; padding: 20px; border-radius: 10px; display: block;">
+        <h1>Welcome to Our Project</h1>
+        <p>This map provides an interactive overview of our project. Explore various data points and see detailed
+            information by navigating through the map. Enjoy your journey!</p>
+        <button onclick="closeIntro()">Get Started!</button>
+    </div>
+
     <div id="side-panel"
         style="position: absolute; top: 10px; right: 10px; z-index: 1; background: white; padding: 10px; display: none;">
         <div id="point-list"></div>
     </div>
-    <div id="map"></div>
-    <div id="narrative">
+    <div id="narrative" class="map-layer">
         <h1>Story Title</h1>
         <p>This is the introductory text of your story.</p>
         <div id="story-controls">
@@ -39,9 +47,17 @@
         let currentStoryIndex = 0; // Initialize the story index
         const storyPoints = [
             {
+                center: [14.037918743922944, 35],
+                zoom: 0,
+                narrative: `<h2>Navigation Block</h2><p>This block will show us more data when we click next, 
+                    and will guide you back to the previous step when you click previous!.</p>`,
+                showNewTileset: true
+            },
+            {
                 center: [14.037918743922944, 51.2],
                 zoom: 5.5,
-                narrative: `<h2>Crime Data Overview</h2><p>Explore crime data across regions.</p>`
+                narrative: `<h2>Crime Data Overview</h2><p>Explore crime data across regions.</p>`,
+                showNewTileset: true
             },
             {
                 center: [14.037918743922944, 51.2],
@@ -56,6 +72,18 @@
                 showNewTileset: true
             },
         ];
+        function closeIntro() {
+            document.getElementById('intro-panel').style.display = 'none'; // Hide the intro panel
+            document.getElementById('narrative').style.display = 'block'; // Adjust based on your actual IDs or classes
+            var mapLayers = document.querySelectorAll('.map-layer');
+            mapLayers.forEach(function (layer) {
+                layer.style.display = 'block'; // This line shows the map layers
+
+            });
+            document.getElementById('Get Started!').addEventListener('click', () => navigateStory(1));
+            map.resize()
+            // Optionally, trigger any other actions that should occur after the intro is closed
+        }
 
         function showStoryPoint(index) {
             const point = storyPoints[index];
@@ -75,23 +103,34 @@
                 `;
 
             // Handle layer visibility
+
             if (index === 0) { // For the first story point
+                if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
                 if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
                 if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
                 if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
+                if (map.getLayer('trials-labels')) map.setLayoutProperty('trials-labels', 'visibility', 'none');
+            }
+            if (index === 1) { // For the first story point
+                if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
+                if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
+                if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
+                if (map.getLayer('trials-labels')) map.setLayoutProperty('trials-labels', 'visibility', 'none');
                 map.setLayoutProperty('crimes', 'visibility', 'visible');
             }
-            else if (index === 1) { // For the second story point
+            else if (index === 2) { // For the second story point
                 if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
                 if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
+                if (map.getLayer('trials-labels')) map.setLayoutProperty('trials-labels', 'visibility', 'none');
                 map.setLayoutProperty('pointsOfInterest', 'visibility', 'visible');
                 map.setLayoutProperty('poi-labels', 'visibility', 'visible');
             }
-            else if (index === 2) { // For the third story point
+            else if (index === 3) { // For the third story point
                 if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
                 if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
                 if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
                 map.setLayoutProperty('trials', 'visibility', 'visible');
+                map.setLayoutProperty('trials-labels', 'visibility', 'visible');
             }
 
             // Assuming the side panel HTML is already in place as described previously
@@ -160,9 +199,6 @@
                 }
             });
 
-
-
-
             map.on('click', 'pointsOfInterest', (e) => {
                 const Name = e.features[0].properties['Name of Location'];
                 let popupContent = `<h3>Name of Location: ${Name}</h3>`;
@@ -212,7 +248,6 @@
             });
 
             const layers = ['crimes', 'pointsOfInterest', 'trials'];
-
             layers.forEach(layer => {
                 map.on('mouseenter', layer, () => map.getCanvas().style.cursor = 'pointer');
                 map.on('mouseleave', layer, () => map.getCanvas().style.cursor = '');
@@ -239,6 +274,7 @@
 
 
         map.on('load', () => {
+            showStoryPoint(currentStoryIndex);
 
             map.addSource('crimes', {
                 'url': config.CrimesURL,
@@ -299,7 +335,7 @@
                     'text-field': ['get', 'Name of Location'],
                     'text-size': 12,
                     'text-anchor': 'top',
-                    'text-offset': [0, 0.2],
+                    'text-offset': [0, 0.5],
                     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold']
                 },
                 'paint': {
@@ -327,11 +363,28 @@
                 'id': 'trials',
                 'type': 'circle',
                 'source': 'trials', // Make sure this matches the newly added source ID
-                'source-layer': config.TrialsSource, // This should match your actual source layer ID in the tileset
+                'source-layer': config.TrialsSource,
                 'paint': {
                     'circle-color': '#006400',
                     'circle-opacity': 0.75,
                     'circle-radius': 5
+                }
+            });
+            map.addLayer({
+                'id': 'trials-labels',
+                'type': 'symbol',
+                'source': 'trials',
+                'source-layer': config.TrialsSource,
+                'layout': {
+                    'text-field': ['get', 'Court Date'],
+                    'text-size': 12,
+                    'text-anchor': 'top',
+                    'text-offset': [0, 0.5],
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold']
+                },
+                'paint': {
+                    'text-color': '#006400', // Set the text color
+                    'text-opacity': 0.75, // Set the text opacity for visibility
                 }
             });
 

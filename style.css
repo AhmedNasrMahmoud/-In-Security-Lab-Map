@@ -40,6 +40,10 @@ body {
   border-radius: 5px;
 }
 
+#narrative, .map-layer {
+  display: none; /* Initially hide narrative and map layers */
+}
+
 #story-controls {
   display: flex;
   justify-content: space-between;
@@ -107,3 +111,9 @@ body {
   justify-content: center;
   padding: 10px;
 }
+
+#intro-panel {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
