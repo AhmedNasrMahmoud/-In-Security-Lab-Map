@@ -171,38 +171,62 @@ function showStoryPoint(index) {
     });
 
     map.on('click', 'trials', (e) => {
-        const trialNo = e.features[0].properties['Trial No.'];
-        let popupContent = `<h3>Trial Number: ${trialNo}</h3>`;
-        const preferredOrder = ['Defendant Name', 'Gender/Sex', 'Crime', '﻿ID'];
-
-        // Create an array of keys from the properties, excluding unwanted keys
-        const keys = Object.keys(e.features[0].properties)
-            .filter(key => !['Trial No.', 'GeoLocation of Trial', 'GeoLocation of Crime', 'Territory']
-                .includes(key) && e.features[0].properties[key] !== '.' && e.features[0].properties[key] !== '');
-
-        // Sort the keys by preferred order first, then the rest as they come
-        const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
-
-        for (const key of sortedKeys) {
-            let displayValue = e.features[0].properties[key];
-            // Convert values for "Gender/Sex"
-            if (key == "Gender/Sex") {
-                displayValue = displayValue == '0' ? 'Male' : 'Female';
-            }
-            // Convert all other '0' and '1' values to 'No' and 'Yes', besides 'Sentence Length'
-            else if (displayValue == '0' && key !== 'Sentence Length') {
-                displayValue = 'No';
-            } else if (displayValue == '1' && key !== 'Sentence Length') {
-                displayValue = 'Yes';
-            }
-
-            popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+        document.getElementById('point-list').innerHTML = '';
+    
+        var bbox = [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
+        var features = map.queryRenderedFeatures(bbox, { layers: ['trials'] });
+    
+        if (features.length) {
+            document.getElementById('side-panel').style.display = 'block';
+            var listHTML = '';
+            features.forEach(function (feature, index) {
+                const trialNumber = feature.properties['Trial No.'];
+                listHTML += `<div class="list-item" data-index="${index}">${trialNumber}</div>`;
+            });
+            document.getElementById('point-list').innerHTML = listHTML;
+    
+            document.querySelectorAll('.list-item').forEach(function (item) {
+                item.addEventListener('click', function () {
+                    if (window.currentPopup) {
+                        window.currentPopup.remove(); // Close the current popup if it exists
+                    }
+    
+                    var index = this.getAttribute('data-index');
+                    var feature = features[index];
+    
+                    let popupContent = `<h3>Trial Number: ${feature.properties['Trial No.']}</h3>`;
+                    const preferredOrder = ['Defendant Name', 'Gender/Sex', 'Crime'];
+    
+                    const keys = Object.keys(feature.properties)
+                        .filter(key => !['Trial No.', 'GeoLocation of Trial', 'GeoLocation of Crime', 'Territory']
+                            .includes(key) && feature.properties[key] !== '.' && feature.properties[key] !== '');
+    
+                    const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
+    
+                    for (const key of sortedKeys) {
+                        let displayValue = feature.properties[key];
+                        if (key === "Gender/Sex") {
+                            displayValue = displayValue === '0' ? 'Male' : 'Female';
+                        } else if (displayValue === '0' && key !== 'Sentence Length') {
+                            displayValue = 'No';
+                        } else if (displayValue === '1' && key !== 'Sentence Length') {
+                            displayValue = 'Yes';
+                        }
+    
+                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                    }
+    
+                    window.currentPopup = new mapboxgl.Popup()
+                        .setLngLat(feature.geometry.coordinates)
+                        .setHTML(popupContent)
+                        .addTo(map);
+                });
+            });
+        } else {
+            document.getElementById('side-panel').style.display = 'none';
         }
-        new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(popupContent)
-            .addTo(map);
     });
+    
 
     const layers = ['crimes', 'pointsOfInterest', 'trials'];
     layers.forEach(layer => {
@@ -222,6 +246,7 @@ function navigateStory(direction) {
         document.getElementById('poi-panel').style.display = currentStoryIndex === 1 ? 'block' : 'none';
         document.getElementById('trial-panel').style.display = currentStoryIndex === 2 ? 'block' : 'none';
         document.getElementById('narrative').style.display = 'none';
+        document.getElementById('side-panel').style.display = 'none';
     }
 }
 

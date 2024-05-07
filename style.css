@@ -122,33 +122,35 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;  /* Increased width */
+  width: 450px; /* Increased width */
   max-width: 90%; /* Ensuring it doesn't get too wide on smaller screens */
+  padding: 40px; /* Increased padding for a larger feel */
   background-color: white;
-  padding: 30px;  /* Increased padding for better layout */
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
   z-index: 1;
   display: none; /* Initially hidden */
+  overflow-y: auto;
+  max-height: 90%;
 }
 
 #crime-panel h1, #poi-panel h1, #trial-panel h1 {
   color: #333;
-  font-size: 24px; /* Slightly larger font size for headings */
-  margin-bottom: 15px;
+  font-size: 26px; /* Larger font size for headings */
+  margin-bottom: 20px;
 }
 
 #crime-panel p, #poi-panel p, #trial-panel p {
   color: #555;
-  font-size: 18px; /* Slightly larger font size for text */
-  margin-bottom: 25px; /* Increased space between paragraphs and button */
+  font-size: 18px; /* Larger font size for text */
+  margin-bottom: 30px; /* Increased space between paragraphs and button */
 }
 
 #crime-panel button, #poi-panel button, #trial-panel button {
-  padding: 10px 20px;
+  padding: 12px 24px;
   background-color: #007BFF;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   color: white;
   cursor: pointer;
   font-size: 16px; /* Larger font size for better readability */
