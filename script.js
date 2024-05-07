@@ -180,7 +180,7 @@ function showStoryPoint(index) {
             document.getElementById('side-panel').style.display = 'block';
             var listHTML = '';
             features.forEach(function (feature, index) {
-                const trialNumber = feature.properties['Trial No.'];
+                const trialNumber = `<p>Trial Number: ${feature.properties['Trial No.']}</p>`;
                 listHTML += `<div class="list-item" data-index="${index}">${trialNumber}</div>`;
             });
             document.getElementById('point-list').innerHTML = listHTML;
