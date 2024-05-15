@@ -13,40 +13,28 @@ const storyPoints = [
         center: [14.037918743922944, 51.2],
         zoom: 5.5,
         narrative: `<h2>Crime Data Overview</h2><p>Explore crime data across regions.</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-        commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
-        nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit
-        anim id est laborum.
-        </p>
-        `,
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>`,
         showNewTileset: true
     },
     {
         center: [14.037918743922944, 51.2],
         zoom: 5.8,
         narrative: `<h2>Points of Interest Data Overview</h2><p>Explore Points of Interest data across regions.</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-        commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
-        nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit
-        anim id est laborum.
-        </p>
-        `,
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>`,
         showNewTileset: true
     },
     {
         center: [10.5, 51.5],
         zoom: 5.6,
         narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-        commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
-        nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit
-        anim id est laborum.
-        </p>
-        `,
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>`,
         showNewTileset: true
+    },
+    {
+        center: [10.5, 51.5],
+        zoom: 5.6,
+        narrative: `<h2>Trial Data Overview</h2><p>Explore Trial data across regions.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>`,
     },
 ];
 
@@ -54,18 +42,22 @@ function showStoryPoint(index) {
     const point = storyPoints[index];
     if (!point) return; // Exit if the index is out of bounds
 
+    // Close any existing popups
+    if (window.currentPopup) {
+        window.currentPopup.remove();
+        window.currentPopup = null;
+    }
+
     map.flyTo({
         center: point.center,
         zoom: point.zoom
     });
 
     document.getElementById('narrative').innerHTML = point.narrative +
-        `
-            <div id="story-controls">
-                <button onclick="navigateStory(-1)">Previous</button>
-                <button onclick="navigateStory(1)">Next</button>
-            </div>
-        `;
+        `<div id="story-controls">
+            <button onclick="navigateStory(-1)">Previous</button>
+            <button onclick="navigateStory(1)">Next</button>
+        </div>`;
 
     // Handle layer visibility
     if (index === 0) { // For the first story point
@@ -74,15 +66,20 @@ function showStoryPoint(index) {
         if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
         if (map.getLayer('trials-labels')) map.setLayoutProperty('trials-labels', 'visibility', 'none');
         map.setLayoutProperty('crimes', 'visibility', 'visible');
-    }
-    else if (index === 1) { // For the second story point
+    } else if (index === 1) { // For the second story point
         if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
         if (map.getLayer('trials')) map.setLayoutProperty('trials', 'visibility', 'none');
         if (map.getLayer('trials-labels')) map.setLayoutProperty('trials-labels', 'visibility', 'none');
         map.setLayoutProperty('pointsOfInterest', 'visibility', 'visible');
         map.setLayoutProperty('poi-labels', 'visibility', 'visible');
+    } else if (index === 2) { // For the third story point
+        if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
+        if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
+        if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
+        map.setLayoutProperty('trials', 'visibility', 'visible');
+        map.setLayoutProperty('trials-labels', 'visibility', 'visible');
     }
-    else if (index === 2) { // For the third story point
+    else if (index > 2) { // For the third story point
         if (map.getLayer('crimes')) map.setLayoutProperty('crimes', 'visibility', 'none');
         if (map.getLayer('pointsOfInterest')) map.setLayoutProperty('pointsOfInterest', 'visibility', 'none');
         if (map.getLayer('poi-labels')) map.setLayoutProperty('poi-labels', 'visibility', 'none');
@@ -101,7 +98,6 @@ function showStoryPoint(index) {
             document.getElementById('side-panel').style.display = 'block';
             var listHTML = '';
             features.forEach(function (feature, index) {
-                // Assuming 'Defendant Name' can serve as a title for each item
                 const defendantName = feature.properties['Defendant Name'];
                 listHTML += `<div class="list-item" data-index="${index}">${defendantName}</div>`;
             });
@@ -112,7 +108,6 @@ function showStoryPoint(index) {
             // Add click listeners to each list item
             document.querySelectorAll('.list-item').forEach(function (item) {
                 item.addEventListener('click', function () {
-                    // Close the current popup if it exists before opening a new one
                     if (window.currentPopup) {
                         window.currentPopup.remove();
                     }
@@ -120,30 +115,33 @@ function showStoryPoint(index) {
                     var index = this.getAttribute('data-index');
                     var feature = features[index];
 
-                    // Building the popup content based on the feature's properties
                     let popupContent = `<h3>Defendant Name: ${feature.properties['Defendant Name']}</h3>`;
                     const preferredOrder = ['Gender/Sex', 'Crime', '﻿ID'];
 
                     const keys = Object.keys(feature.properties)
-                        .filter(key => !['GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Defendant Name']
+                        .filter(key => !['GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Defendant Name', 'Latitude', 'Longitude', 'Lat', 'Long', 'Lng']
                             .includes(key) && feature.properties[key] !== '.' && feature.properties[key] !== '');
 
                     const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
 
                     for (const key of sortedKeys) {
+                        let displayKey = key;
                         let displayValue = feature.properties[key];
                         if (key === "Gender/Sex") {
-                            displayValue = displayValue === '0' ? 'Male' : 'Female';
-                        } else if (displayValue === '0' && key !== 'Sentence Length') {
+                            displayValue = (displayValue === '0' || displayValue === 0) ? 'Male' : 'Female';
+                        } else if (displayValue === '0' || displayValue === 0) {
                             displayValue = 'No';
-                        } else if (displayValue === '1' && key !== 'Sentence Length') {
+                        } else if (displayValue === '1' || displayValue === 1) {
                             displayValue = 'Yes';
+                        } else if (key === "Nationality 1" || key === "Nationality 2") {
+                            displayKey = "Nationality of Victim";
+                        } else if (key === "Victim 1" || key === "Victim 2") {
+                            displayKey = "Type of Victim";
                         }
 
-                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+                        popupContent += `<div><strong>${displayKey}</strong>: ${displayValue}</div>`;
                     }
 
-                    // Display the detailed popup for the clicked item
                     window.currentPopup = new mapboxgl.Popup()
                         .setLngLat(feature.geometry.coordinates)
                         .setHTML(popupContent)
@@ -151,7 +149,6 @@ function showStoryPoint(index) {
                 });
             });
         } else {
-            // Hide the side panel if no features are found
             document.getElementById('side-panel').style.display = 'none';
         }
     });
@@ -161,10 +158,19 @@ function showStoryPoint(index) {
         let popupContent = `<h3>Name of Location: ${Name}</h3>`;
         for (const [key, value] of Object.entries(e.features[0].properties)) {
             if (value !== '.' && value !== '' && key !== 'Name of Location') {
-                popupContent += `<div><strong>${key}</strong>: ${value}</div>`;
+                let displayKey = key;
+                if (key === "Nationality 1" || key === "Nationality 2") {
+                    displayKey = "Nationality of Victim";
+                } else if (key === "Victim 1" || key === "Victim 2") {
+                    displayKey = "Type of Victim";
+                }
+                popupContent += `<div><strong>${displayKey}</strong>: ${value}</div>`;
             }
         }
-        new mapboxgl.Popup()
+        if (window.currentPopup) {
+            window.currentPopup.remove();
+        }
+        window.currentPopup = new mapboxgl.Popup()
             .setLngLat(e.lngLat)
             .setHTML(popupContent)
             .addTo(map);
@@ -172,10 +178,10 @@ function showStoryPoint(index) {
 
     map.on('click', 'trials', (e) => {
         document.getElementById('point-list').innerHTML = '';
-    
+
         var bbox = [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
         var features = map.queryRenderedFeatures(bbox, { layers: ['trials'] });
-    
+
         if (features.length) {
             document.getElementById('side-panel').style.display = 'block';
             var listHTML = '';
@@ -184,38 +190,42 @@ function showStoryPoint(index) {
                 listHTML += `<div class="list-item" data-index="${index}">${trialNumber}</div>`;
             });
             document.getElementById('point-list').innerHTML = listHTML;
-    
+
             document.querySelectorAll('.list-item').forEach(function (item) {
                 item.addEventListener('click', function () {
                     if (window.currentPopup) {
                         window.currentPopup.remove(); // Close the current popup if it exists
                     }
-    
+
                     var index = this.getAttribute('data-index');
                     var feature = features[index];
-    
+
                     let popupContent = `<h3>Trial Number: ${feature.properties['Trial No.']}</h3>`;
                     const preferredOrder = ['Defendant Name', 'Gender/Sex', 'Crime'];
-    
+
                     const keys = Object.keys(feature.properties)
-                        .filter(key => !['Trial No.', 'GeoLocation of Trial', 'GeoLocation of Crime', 'Territory']
+                        .filter(key => !['Trial No.', 'GeoLocation of Trial', 'GeoLocation of Crime', 'Territory', 'Latitude', 'Longitude', 'Lat', 'Long', 'Lng']
                             .includes(key) && feature.properties[key] !== '.' && feature.properties[key] !== '');
-    
+
                     const sortedKeys = [...preferredOrder, ...keys.filter(key => !preferredOrder.includes(key))];
-    
                     for (const key of sortedKeys) {
+                        let displayKey = key;
                         let displayValue = feature.properties[key];
                         if (key === "Gender/Sex") {
-                            displayValue = displayValue === '0' ? 'Male' : 'Female';
-                        } else if (displayValue === '0' && key !== 'Sentence Length') {
+                            displayValue = (displayValue === '0' || displayValue === 0) ? 'Male' : 'Female';
+                        } else if (displayValue === '0' || displayValue === 0) {
                             displayValue = 'No';
-                        } else if (displayValue === '1' && key !== 'Sentence Length') {
+                        } else if (displayValue === '1' || displayValue === 1) {
                             displayValue = 'Yes';
+                        } else if (key === "Nationality 1" || key === "Nationality 2") {
+                            displayKey = "Nationality of Victim";
+                        } else if (key === "Victim 1" || key === "Victim 2") {
+                            displayKey = "Type of Victim";
                         }
-    
-                        popupContent += `<div><strong>${key}</strong>: ${displayValue}</div>`;
+
+                        popupContent += `<div><strong>${displayKey}</strong>: ${displayValue}</div>`;
                     }
-    
+
                     window.currentPopup = new mapboxgl.Popup()
                         .setLngLat(feature.geometry.coordinates)
                         .setHTML(popupContent)
@@ -226,30 +236,34 @@ function showStoryPoint(index) {
             document.getElementById('side-panel').style.display = 'none';
         }
     });
-    
 
     const layers = ['crimes', 'pointsOfInterest', 'trials'];
     layers.forEach(layer => {
         map.on('mouseenter', layer, () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', layer, () => map.getCanvas().style.cursor = '');
     });
-
 }
 
 function navigateStory(direction) {
     const newIndex = currentStoryIndex + direction;
     if (newIndex >= 0 && newIndex < storyPoints.length) {
+        // Close any existing popups
+        if (window.currentPopup) {
+            window.currentPopup.remove();
+            window.currentPopup = null;
+        }
+
         currentStoryIndex = newIndex;
         showStoryPoint(currentStoryIndex);
         // Manage panel visibility based on the currentStoryIndex
         document.getElementById('crime-panel').style.display = currentStoryIndex === 0 ? 'block' : 'none';
         document.getElementById('poi-panel').style.display = currentStoryIndex === 1 ? 'block' : 'none';
         document.getElementById('trial-panel').style.display = currentStoryIndex === 2 ? 'block' : 'none';
+        document.getElementById('conclusion-panel').style.display = currentStoryIndex > 2 ? 'block' : 'none';
         document.getElementById('narrative').style.display = 'none';
         document.getElementById('side-panel').style.display = 'none';
     }
 }
-
 
 document.addEventListener('click', function (event) {
     if (event.target.classList.contains('list-item-title')) {
@@ -257,7 +271,6 @@ document.addEventListener('click', function (event) {
         detailsElement.classList.toggle('open'); // Toggle visibility of details
     }
 });
-
 
 map.on('load', () => {
     map.addSource('crimes', {
@@ -305,7 +318,6 @@ map.on('load', () => {
             'circle-opacity': 0.75,
             'circle-radius': 5
         }
-
     });
 
     map.addLayer({
@@ -367,5 +379,4 @@ map.on('load', () => {
             'text-opacity': 0.75, // Set the text opacity for visibility
         }
     });
-
 });
